@@ -1,47 +1,59 @@
 #install these packages if you haven't done so already
-#install.packages("gridExtra") 
+#install.packages("gridExtra")
 #install.packages("tidyverse")
 #install.packages("here")
 
-#Load the packages
+#Load the packages 
 library(tidyverse)
 library(here)
 library(gridExtra)
 
+#Press CTRL-Enter to run your code
+
 here()
 #Read the data
 df <- read_csv("data/nba_player_stats_1920.csv")
-
+#  alt-dash to make that arrow
+#alternative loading method
+#df <- read_csv("C:/Users/jorenstein/Documents/PROJECT/SPRTPS5350data/nba_player_stats_1920.csv") 
 #Look at your data
-View(df)
-dim(df) # see the dimensions of your data in rows and columns (11,358 rows, 6 columns)
+
+dim(df) # see the dimensions of your data in rows and columns (105 rows, 25 columns)
 dim(full_df)  # see the dimensions of your data in rows and columns (207,058 rows, 6 columns)
 names(df) # see the names of your columns
-head(df) # see the first 5 rows of your data
-tail(df) # see the last 5 rows of your data
+head(df) # see the first 6 rows of your data
+tail(df) # see the last 6 rows of your data
 str(df)
 # Basic plotting in R
 plot(df$TRB,df$BLK) 
 # View the NBA player data
 View(df)
 
+names(df)
 #Scatterplot of the NBA data in GGplot
 ggplot(data = df) +
-  geom_point(mapping = aes(x = TRB, y = BLK))
+  geom_point(mapping = aes(x = FG_PCT, y = STL))
+
+ggplot(df) +
+  geom_point(aes(x=TRB, y=BLK,color=Pos))
 
 #Aesthetics
 ggplot(df) + geom_point(aes(x = TRB, y = BLK, color = Pos))
 ggplot(df) + geom_point(aes(x = TRB, y = BLK, size = Pos))
 ggplot(df) + geom_point(aes(x = TRB, y = BLK, shape = Pos))
-ggplot(df) + geom_point(aes(x = TRB, y = BLK, alpha = Pos)) #transparency of the datapoint
+ggplot(df) + geom_point(aes(x = `2P_PCT`, y = BLK, alpha = Pos)) #transparency of the datapoint
+ggplot(df) + geom_point(aes(x = TRB, y = BLK, alpha = Pos))
 
 #Set vs Map
-ggplot(df) + geom_point(aes(x = TRB, y = BLK, color = "green")) # color = green adds text to the legend
-ggplot(df) + geom_point(aes(x = TRB, y = BLK), color = "green") # color of the dot is now green
+ggplot(df) + geom_point(aes(x = TRB, y = BLK, color = "blue")) # color = green adds text to the legend
+ggplot(df) + geom_point(aes(x = TRB, y = BLK), color = "blue") # color of the dot is now green
 
 #Facets
 small_df <- df %>% filter(Tm %in% c("BOS","DEN","MIL","ATL","SAS"))  #We'll cover filter shortly but all we're doing here is keeping a few teams worth of data
-q <- ggplot(new_df) + geom_point(aes(x = TRB, y = BLK))
+dim(small_df)
+View(small_df)
+q <- ggplot(small_df) + geom_point(aes(x = TRB, y = BLK))
+q
 q + facet_grid(. ~ Pos) #Position in the columns
 q + facet_grid(Tm ~ .) #Teams in the rows
 q + facet_grid (Tm ~ Pos) #Teams in the rows and Position in the columns
@@ -51,7 +63,7 @@ q + facet_wrap(~ Pos) #1D Ribbon wrapped into 2D
 #Same x-axis, same y-axis, same data
 #What's different?
 #geometric object (geom point vs geom smooth)
-par(mfrow = c(1,2))
+
 x <- ggplot(data = df) +
   geom_point(mapping = aes(x = TRB, y = BLK))
 y <- ggplot(data = df) +
@@ -60,7 +72,7 @@ grid.arrange(x,y, ncol=2, nrow = 1)
 
 #Make a boxplot
 ggplot(df) +
-  geom_boxplot(mapping = aes(x = Pos, y = TRB))
+  geom_boxplot(mapping = aes(x = Pos, y = AST))
 
 #Order the positions in the typical order of PG -> C
 df$Pos <- factor(df$Pos , levels=c("PG", "SG", "SF", "PF","C"))  
@@ -73,6 +85,17 @@ ggplot(df) +
 ggplot(df) +
   geom_point(mapping = aes(x = TRB, y = BLK)) +
   geom_smooth(mapping = aes(x = TRB, y = BLK))
+
+ggplot(df) +
+  geom_point(mapping = aes(x=TRB,y=BLK)) +
+  geom_smooth(mapping = aes(x = TRB, y = BLK))
+
+#### END APRIL 23 ####
+
+
+
+
+
 
 #Global vs Local
 df_guards <- df %>% filter(Pos %in% c("PG","SG")) #lets just use guards for this example
