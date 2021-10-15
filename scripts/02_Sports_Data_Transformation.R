@@ -1,46 +1,66 @@
 #2020 MLB statcast data through Sep 15
 library(tidyverse)
-df %>% write_csv("data/fastball-pct.csv")
 full_df <- read_csv("data/pitching.csv")
 
+dim(full_df)
 #Look at your data
-View(df)
+#View(df)
 dim(df) # see the dimensions of your data in rows and columns (11,358 rows, 6 columns)
 dim(full_df)  # see the dimensions of your data in rows and columns (207,058 rows, 6 columns)
 names(df) # see the names of your columns
-head(df) # see the first 5 rows of your data
-tail(df) # see the last 5 rows of your data
-str(df)
+head(df) # see the first 6 rows of your data
+tail(df) # see the last 6 rows of your data
+str(full_df)
+
+### Make a new dataset ###
+
+df <- full_df %>% 
+  filter(pitch_type == "FF") %>% 
+  group_by(player_name) %>% 
+  summarise(mph=mean(release_speed),rpm=mean(release_spin_rate),n=n())
+
 #########FILTER###########
 
-#pitchers that threw fastballs 100% of the time in a given outing
-filter(df, fb_pct == 1)
+#pitches over 100 mph
+names(full_df)
+filter(full_df, release_speed>100)
 
 #filter - Extract rows that meet logical criteria. 
-degrom <- filter(df, player_name == "Jacob deGrom")
+degrom <- filter(full_df, player_name == "Jacob deGrom")
+head(full_df)
 head(degrom)
-
+d <- degrom %>% 
+  filter(pitch_type == "FF") %>% 
+  group_by(game_date) %>% 
+  summarise(mph=mean(release_speed)) %>% 
+  arrange(game_date)
+head(d)
 #plot it on game-by-game level
-ggplot(data = degrom, mapping = aes(game_date, fb_pct)) +
+ggplot(data = d, mapping = aes(game_date, mph)) +
   geom_line()
-
-#filter two things - threw fastball more than 90% of time, threw more than 50 pitches to LHB
-filter(df, fb_pct > .9, pitches > 50, stand == "L")
-
+head(df)
+#filter a few things - threw fastballs greater than 95 mph and 2300 rpm and 400+pitches
+filter(df, mph > 95, pitches > 400, rpm > 2300)
+filter(df, mph > 95, pitches > 400, rpm > 2300) %>% View()
 
 # 1. Create a vector that contains the name of each of your group members.
 # 2 Extract all rows whose name value appears in the vector
 # 3 Recreate the plot. Choose an aesthetic to distinguish different names
 
 #get data for deGrom and Kershaw
-gnames <- c("Jacob deGrom",  "Clayton Kershaw")
-group_names <- filter(df, player_name %in% gnames)
-#plot it
-ggplot(group_names, aes(game_date, fb_pct, color = player_name)) +
-  geom_line()
+gnames <- c("Jacob deGrom",  "Clayton Kershaw", "Gerrit Cole")
+names(full_df)
+group_names <- filter(full_df, player_name %in% gnames)
 
-#plot data based on batter side
-ggplot(group_names, aes(game_date, fb_pct, color = interaction(player_name, stand))) +
+group <- group_names %>% #ctrl-shift-m for piping
+  filter(pitch_type == "FF") %>% 
+  group_by(player_name,game_date) %>% 
+  summarise(mph=mean(release_speed)) %>% 
+  arrange(player_name,game_date)
+
+head(group)
+#plot it
+ggplot(group, aes(game_date, mph, color = player_name)) +
   geom_line()
 
 
@@ -52,30 +72,26 @@ arrange(full_df,release_speed)
 #the fastest pitches
 arrange(full_df,desc(release_speed))
 
+names(df)
 
-# Which pitcher threw the most pitches in a game (grouped by batter stand)?
+# Which pitcher threw the most pitches last season?
+arrange(df,desc(n))
 
-arrange(df,desc(pitches))
-
-
-# In what game did deGrom throw the most pitches to an RHB (grouped by batter stand)?
-
-arrange(degrom,desc(pitches))
-
+# Which pitchers throw the hardest?
+arrange(df,desc(mph))
 
 # Select - Extract columns by name
-
+names(full_df)
 #select a range of columns
-select(df,player_name:game_date)
+select(full_df,player_name:release_speed)
 
-names(df)
+
 #select every column but
-select(df,-c(fb,fb_pct))
-
+select(df,-c(rpm,n))
 
 #mutate - create new columns
-mutate(full_df,spin_factor = release_spin_rate / release_speed)
-mutate(full_df,spin_factor = release_spin_rate / release_speed, inverse = sqrt(spin_factor))
+mutate(full_df,spin_factor = release_spin_rate / release_speed) %>% View()
+mutate(full_df,spin_factor = release_spin_rate / release_speed, inverse = sqrt(spin_factor)) %>% View()
 
 #drop the old data
 transmute(full_df,spin_factor = release_spin_rate / release_speed, inverse = sqrt(spin_factor))
@@ -84,19 +100,8 @@ transmute(full_df,spin_factor = release_spin_rate / release_speed, inverse = sqr
 full_df <- na.omit(full_df) #omit any rows that have an NA in it
 
 
-#summarise
-summarise(full_df, avg_release_speed = mean(release_speed), n = n())
-
-summarise(full_df,
-          n = n(), # Number of pitches / rows
-          n_pitch_types = n_distinct(pitch_type) # number of unique pitch types
-)
-
-
-#1. Add a new column to df that converts fb_pct to a percent
-
-mutate(df, percent = fb_pct * 100)
-
+#1. Add a new column to df that converts rpm divided by mph into spin factor
+mutate(df, spin_factor = rpm/mph)
 
 #2. Determine how many unique names appear in the fulldf data set.
 
@@ -105,7 +110,6 @@ mutate(df, percent = fb_pct * 100)
 
 #4. Write a filter statement to find all of Jacob deGrom's fastballs thrown harder than 100 mph
 #   Write a summary statement to count how many pitches were thrown more than 100 mph
-
 
 
 summarize(full_df, n = n_distinct(player_name))
@@ -123,19 +127,21 @@ summarise(degrom2, nn = n())
 
 full_df %>% 
   filter(player_name=="Jacob deGrom")
-
+dim(full_df)
 full_df %>% 
   filter(player_name=="Jacob deGrom",pitch_type == "FF") %>% 
   dplyr::summarise(min = min(release_speed), mean = mean(release_speed),
             max = max(release_speed))
 
-
+names(full_df)
 #grabbing data for class 2 bonus exercises 
-full_df %>% 
-  filter(pitch_type=="FF") %>% 
-  group_by(player_name) %>% 
-  summarise(mph=mean(release_speed),rpm=mean(release_spin_rate),n=n()) %>% 
-  filter(n>300) %>% write_csv('data/fb_pitches.csv')
+barnes <- full_df %>% 
+  filter(player_name=="Matt Barnes") %>% 
+  filter(pitch_type %in% c("FF")) %>% 
+  group_by(player_name,game_date,pitch_type) %>% 
+  summarise(mph=mean(release_speed),rpm=mean(release_spin_rate),n=n()) 
+  #%>% filter(n>300) %>% write_csv('data/fb_pitches.csv')
+barnes
 
 #Rewrite the code below to use the pipe operator. 
 #Then run it to ensure that it works.
@@ -148,14 +154,11 @@ summarise(full_df3, nn = n())
 
 
 
-
 full_df %>% 
   mutate(spin_factor = release_spin_rate/release_speed) %>% 
-  filter(spin_factor > 45) %>% 
-  summarise(nn = n())
+  filter(spin_factor > 45) 
 
-
-
+summary(full_df)
 
 ###Grouping ###
 
@@ -185,15 +188,6 @@ full_df %>%
   summarise(mph = mean(release_speed), rpm = mean(release_spin_rate), n = n()) %>% 
   filter(n>10) %>% #at least 10 pitches per category  
   arrange(desc(mph)) #sorted on avg mph
-
-
-#Group by a common value
-
-#pitches seen by batter handedness
-df %>%
-  group_by(stand) %>%
-  summarise(total = sum(pitches))
-
 
 ##Does release speed on fastballs and sinkers change over time?
  
